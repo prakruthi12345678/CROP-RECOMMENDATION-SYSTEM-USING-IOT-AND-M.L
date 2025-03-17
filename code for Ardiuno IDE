@@ -1,0 +1,175 @@
+#include <SoftwareSerial.h> 
+#include <Wire.h> 
+// RE and DE Pins set the RS485 module 
+// to Receiver or Transmitter mode 
+#define RE 8 
+#define DE 7 
+ 
+// Modbus RTU requests for reading NPK values 
+const byte nitro[] = {0x01,0x03, 0x00, 0x1e, 0x00, 0x01, 0xe4, 0x0c}; 
+const byte phos[] = {0x01,0x03, 0x00, 0x1f, 0x00, 0x01, 0xb5, 0xcc}; 
+const byte pota[] = {0x01,0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xc0}; 
+ 
+// A variable used to store NPK values 
+byte values[11]; 
+SoftwareSerial mod(2, 3); 
+ 
+#include <OneWire.h> 
+#include <DallasTemperature.h> 
+#include <LiquidCrystal_I2C.h> 
+LiquidCrystal_I2C lcd(0x27, 16, 2); 
+#define ONE_WIRE_BUS 4 
+OneWire oneWire(ONE_WIRE_BUS); 
+DallasTemperature sensors(&oneWire); 
+int t; 
+const int sensor_pin_ph = A0; 
+const int moisture_sensor_pin = A1; 
+int moisture_percentage; 
+int sensor_analog; 
+ 
+int gas_sensor = A2; 
+int gas_result; 
+ 
+void setup(void) { 
+mod.begin(9600); 
+pinMode(RE, OUTPUT); 
+pinMode(DE, OUTPUT); 
+lcd.init(); 
+lcd.clear(); 
+lcd.backlight(); 
+sensors.begin(); // Start up the library 
+Serial.begin(9600); 
+} 
+void loop(void) { 
+sensors.requestTemperatures();
+t = sensors.getTempCByIndex(0); 
+ 
+lcd.setCursor(0, 0); 
+lcd.print("T:"); 
+lcd.setCursor(3, 0); 
+lcd.print(t); 
+ 
+sensor_analog = analogRead(moisture_sensor_pin); 
+moisture_percentage = (100 - ((sensor_analog / 1023.00) * 100)); 
+ 
+lcd.setCursor(8, 0); 
+lcd.print("M:"); 
+lcd.setCursor(10, 0); 
+lcd.print(moisture_percentage); 
+int p = ((1023 - analogRead(sensor_pin_ph)) / 73.07); 
+lcd.setCursor(0, 1); 
+lcd.print("PH:"); 
+lcd.setCursor(3, 1); 
+lcd.print(p); 
+ 
+gas_result = analogRead(gas_sensor); 
+lcd.setCursor(8, 1); 
+lcd.print("Gas:"); 
+lcd.setCursor(12, 1); 
+lcd.print(gas_result); 
+ 
+byte val1,val2,val3; 
+val1 = nitrogen(); 
+delay(250); 
+val2 = phosphorous(); 
+delay(250); 
+val3 = potassium(); 
+delay(250); 
+ 
+delay(1000); 
+lcd.clear(); 
+ 
+lcd.setCursor(0, 0); 
+lcd.print("N:"); 
+lcd.setCursor(2, 0); 
+lcd.print(val1); 
+ 
+lcd.setCursor(9, 0); 
+lcd.print("k:"); 
+lcd.setCursor(11, 0); 
+lcd.print(val3); 
+ 
+lcd.setCursor(0, 1); 
+lcd.print("phos:"); 
+lcd.setCursor(5, 1); 
+lcd.print(val2); 
+// Print values to the serial monitor 
+/* Serial.print("Nitrogen: "); 
+Serial.print(val1); 
+Serial.println(" mg/kg"); 
+Serial.print("Phosphorous: "); 
+Serial.print(val2); 
+Serial.println(" mg/kg"); 
+Serial.print("Potassium: "); 
+Serial.print(val3); 
+Serial.println(" mg/kg"); */ 
+ 
+Serial.print(t); 
+Serial.print(","); 
+Serial.print(p); 
+Serial.print(","); 
+Serial.print(moisture_percentage); 
+Serial.print(","); 
+Serial.print(gas_result); 
+Serial.print(","); 
+Serial.print(val1); 
+Serial.print(","); 
+Serial.print(val2); 
+Serial.print(","); 
+Serial.println(val3); 
+ 
+delay(1500); 
+lcd.clear(); 
+ 
+} 
+ 
+byte nitrogen(){ 
+digitalWrite(DE,HIGH); 
+digitalWrite(RE,HIGH); 
+delay(10); 
+if(mod.write(nitro,sizeof(nitro))==8){ 
+digitalWrite(DE,LOW); 
+digitalWrite(RE,LOW); 
+for(byte i=0;i<7;i++){ 
+//Serial.print(mod.read(),HEX); 
+values[i] = mod.read(); 
+// Serial.print(values[i],HEX); 
+} 
+// Serial.println(); 
+} 
+return values[4]; 
+} 
+ 
+byte phosphorous(){ 
+digitalWrite(DE,HIGH); 
+digitalWrite(RE,HIGH); 
+delay(10); 
+if(mod.write(phos,sizeof(phos))==8){ 
+digitalWrite(DE,LOW); 
+digitalWrite(RE,LOW); 
+for(byte i=0;i<7;i++){ 
+//Serial.print(mod.read(),HEX); 
+values[i] = mod.read(); 
+// Serial.print(values[i],HEX); 
+} 
+// Serial.println(); 
+} 
+return values[4]; 
+} 
+ 
+byte potassium(){ 
+digitalWrite(DE,HIGH); 
+digitalWrite(RE,HIGH); 
+delay(10); 
+if(mod.write(pota,sizeof(pota))==8){ 
+digitalWrite(DE,LOW); 
+digitalWrite(RE,LOW); 
+for(byte i=0;i<7;i++){ 
+//Serial.print(mod.read(),HEX); 
+values[i] = mod.read(); 
+// Serial.print(values[i],HEX); 
+} 
+// Serial.println(); 
+} 
+return values[4]; 
+}
