@@ -1,6 +1,6 @@
 # CROP-RECOMMENDATION-SYSTEM-USING-IOT-AND-M.L
 This includes my major project.
-arming is changing in a big way, thanks to smart technology like the Internet of Things (IoT) 
+Farming is changing in a big way, thanks to smart technology like the Internet of Things (IoT) 
 and Artificial Intelligence (AI). These innovations help farmers grow more food while using 
 resources wisely and cutting down on waste. 
 In recent years, agriculture and the food industry have faced some tough challenges—rising 
