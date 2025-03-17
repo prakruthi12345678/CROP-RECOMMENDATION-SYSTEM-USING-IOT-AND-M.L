@@ -1,0 +1,70 @@
+from flask import Flask, render_template, jsonify 
+import urllib.request 
+import json 
+import requests 
+import numpy as np 
+import urllib.request 
+import json 
+import datetime 
+ 
+app = Flask(_name_) 
+try: 
+dt_model = joblib.load('Random_forest_model.pkl') 
+except Exception as e: 
+dt_model = None 
+def fetch_data(): 
+try: 
+ 
+url = 'https://aislyntech.com/crop/crop_get.php' 
+print(f"Fetching data from: {url}") 
+with urllib.request.urlopen(url) as response: 
+data = json.loads(response.read().decode()) 
+print(f"Received Data: {data}") 
+if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict): 
+return data[0] 
+else: 
+ 
+return None 
+except Exception as e: 
+print(f"Error fetching data: {e}") 
+return None
+  def classify_crop(data): 
+if not data: 
+return "Unknown" 
+ 
+temp = data.get("temperature") 
+ph = data.get("ph") 
+nitrogen = data.get("nitrogen") 
+phosphorus = data.get("phosphorus") 
+potassium = data.get("potassium") 
+if None in [temp, ph, nitrogen, phosphorus, potassium]: 
+return "Invalid Data" 
+if 26 < temp < 33 and 2 < ph < 9 and potassium > 1 and nitrogen < 2 and phosphorus < 2: 
+return "Apple" 
+if 26 < temp < 33 and 2 < ph < 9 and nitrogen > 1 and phosphorus < 2 and potassium < 2: 
+return "Tomato" 
+if 26 < temp < 33 and 2 < ph < 9 and nitrogen > 0 and phosphorus < 1 and potassium < 1: 
+return "Brinjal" 
+if phosphorus > 1 and 26 < temp < 33 and 2 < ph < 9 and potassium < 2 and nitrogen < 2: 
+return "Rice" 
+if phosphorus > 1 and 26 < temp < 33 and 2 < ph < 9 and potassium > 1 and nitrogen < 2: 
+return "Orange" 
+if potassium > 1 and 26 < temp < 33 and 2 < ph < 9 and nitrogen > 1 and phosphorus > 1: 
+return "Mango" 
+if 26 < temp < 33 and 2 < ph < 9 and 1 < potassium < 260 and 1 < nitrogen < 260 and 1 < 
+phosphorus < 260: 
+ 
+return "Wheat" 
+ 
+if 26 < temp < 33 and 2 < ph < 9 and potassium < 200 and nitrogen > 200 and phosphorus < 200: 
+return "Grape" 
+return "Unknown"
+  def index(): 
+new_data = fetch_data() 
+ 
+crop_type = classify_crop(new_data) if new_data else "No Data Available" 
+return render_template('index.html', crop_type=crop_type, data=new_data) 
+ 
+ 
+if _name_ == "_main_": 
+app.run(debug=True)
